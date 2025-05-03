@@ -1,182 +1,177 @@
-class HashMap{
-  constructor(){
-    this.map = [];
-    this.loadfactor = 0.8;
-    this.capacity = 16;
-    this.keys = [];
-    this.values = [];
-  }
-  
-  hash(key) {
-   let hashCode = 0;
-      
-   const primeNumber = 31;
-   for (let i = 0; i < key.length; i++) {
-     hashCode = primeNumber * hashCode + 					key.charCodeAt(i);
-   }
-
-   return hashCode;
- }
-  
- set(key, value){
-   this.keys.push(key);
-   this.values.push(value);
-   let hashKey = hash(key) % this.capacity;
-   this.map[hashKey] = new LinkedListed();
-   this.map[hashKey].append(value);
- }
-  
- get(key){
-   let hashKey = hash(key) % this.capacity;
-   if(!this.map[hashKey]) return null;
-   return this.map[hashKey].toString();
- }
-  
- has(key){
-   let hashKey = hash(key) % this.capacity;
-   if(!this.map[hashKey]) return false;
-   return true;
- }
-  
- remove(key){
-   let hashKey = hash(key) % this.capacity;
-   if(!this.map[hashKey]) return false;
-   this.map[hashKey] = null;
-   return true;
- }
-  
-}
-
-
-
-
-
-class LinkedList {
+class HashMap {
   constructor() {
-    this.root = null;
+    this.map = [];
+    this.loadFactor = 0.75;
+    this.capacity = 16;
+    this.entriesNum = 0;
   }
-  
 
-  append(value) {
-    let newNode = new Node(value);
-    if(this.root == null){
-      this.root = newNode;
-      return;
+  hash(key) {
+    let hashCode = 0;
+
+    const primeNumber = 31;
+    for (let i = 0; i < key.length; i++) {
+      hashCode = primeNumber * hashCode + key.charCodeAt(i);
     }
-    let curr = this.root;
-    while (curr.next != null) {
-      curr = curr.next;
+
+    return hashCode;
+  }
+
+  set(key, value) {
+    let hashKey = this.hash(key) % this.capacity;
+    this.entriesNum++;
+    if (this.entriesNum > (this.capacity * this.loadFactor)) {
+      this.resize();
     }
-    curr.next = newNode;
-  }
-
-  prepend(value) {
-    let newNode = new Node(value, this.root);
-    this.root = newNode;
-  }
-
-  size() {
-    let size = 0;
-    let curr = this.root;
-    while (curr != null) {
-      curr = curr.next;
-      size++;
-    }
-    return size;
-  }
-
-  head() {
-    return this.root;
-  }
-
-  tail() {
-    let curr = this.root;
-    while (curr.next != null) {
-      curr = curr.next;
-    }
-    return curr;
-  }
-
-  at(index) {
-    let size = 0;
-    let curr = this.root;
-    while (curr != null) {
-      if (size == index) {
-        return curr;
+    if (this.map[hashKey] == null) {
+      this.map[hashKey] = [];
+      this.map[hashKey].push(new HMNode(hashKey, key, value));
+    } else {
+      for (let i = 0; i < this.map[hashKey].length; i++) {
+        if (this.map[hashKey][i].key == key) {
+          this.map[hashKey][i].value = value;
+          return;
+        }
       }
-      curr = curr.next;
-      size++;
+      this.map[hashKey].push(new HMNode(hashKey, key, value));
     }
   }
 
-  pop() {
-    let curr = this.root;
-    if(curr == null) return null;
-    if(curr.next = null){
-      let hold = curr;
-      this.root = null;
-      return hold;
+  resize() {
+    let entries = this.entries();
+    this.clear();
+    this.capacity *= 2;
+    for (let i = 0; i < entries.length; i++) {
+      this.set(entries[i][0], entries[i][1]);
     }
-    while (curr.next.next != null) {
-      curr = curr.next;
-    }
-    let hold = curr.next;
-    curr.next = null;
-    return hold;
+
   }
 
-  contains(value) {
-    let curr = this.root;
-    while (curr != null) {
-      if (curr.value == value) {
-        return true;
+  get(key) {
+    let hashKey = this.hash(key) % this.capacity;
+    if (!this.map[hashKey]) return null;
+    let bucket = this.map[hashKey];
+    for (let i = 0; i < bucket.length; i++) {
+      if (bucket[i].key == key) {
+        return bucket[i];
       }
-      curr = curr.next;
-    }
-    return false;
-  }
-
-  find(value) {
-    let size = 0;
-    let curr = this.root;
-    while (curr != null) {
-      if (curr.value == value) {
-        return size;
-      }
-      curr = curr.next;
-      size++;
     }
     return null;
   }
 
-  toString() {
-    let curr = this.root;
-    let result = '';
-    while (curr != null) {
-      result += `( ${curr.value} ) -> `;
-      curr = curr.next;
+  has(key) {
+    let hashKey = this.hash(key) % this.capacity;
+    if (!this.map[hashKey]) return false;
+    let bucket = this.map[hashKey];
+    for (let i = 0; i < bucket.length; i++) {
+      if (bucket[i].key == key) {
+        return true;
+      }
     }
-    result += ` null`;
-    return result;
+    return false;
   }
 
+  remove(key) {
+    let hashKey = this.hash(key) % this.capacity;
+    if (!this.map[hashKey]) return false;
+    let bucket = this.map[hashKey];
+    for (let i = 0; i < bucket.length; i++) {
+      if (bucket[i].key == key) {
+        bucket.splice(i, 1);
+        return true;
+      }
+    }
+    return false;
+  }
 
+  length() {
+    let length = 0;
+    for (let i = 0; i < this.capacity; i++) {
+      if (this.map[i] != null) {
+        for (let j = 0; j < this.map[i].length; j++) {
+          length++;
+        }
+      }
+    }
+    return length;
+  }
+
+  clear() {
+    this.map = [];
+    this.entriesNum = 0;
+  }
+
+  keys() {
+    let keys = []
+    for (let i = 0; i < this.capacity; i++) {
+      if (this.map[i] != null) {
+        for (let j = 0; j < this.map[i].length; j++) {
+          keys.push(this.map[i][j].key);
+        }
+      }
+    }
+    return keys;
+  }
+
+  values() {
+    let values = []
+    for (let i = 0; i < this.capacity; i++) {
+      if (this.map[i] != null) {
+        for (let j = 0; j < this.map[i].length; j++) {
+          values.push(this.map[i][j].value);
+        }
+      }
+    }
+    return values;
+  }
+  
+  entries() {
+    let entries = [];
+    for (let i = 0; i < this.capacity; i++) {
+      if (this.map[i] != null) {
+        for (let j = 0; j < this.map[i].length; j++) {
+          entries.push([this.map[i][j].key, this.map[i][j].value])
+        }
+      }
+    }
+    return entries;
+  }
 }
 
-class Node {
-  constructor(value, next = null) {
+
+class HMNode {
+  constructor(hashKey, key, value) {
+    this.hashKey = hashKey;
+    this.key = key;
     this.value = value;
-    this.next = next;
   }
 }
 
-const list = new LinkedList();
+const test = new HashMap()
 
-list.append("dog");
-list.append("cat");
-list.append("parrot");
-list.append("hamster");
-list.append("snake");
-list.append("turtle");
+test.set('apple', 'red')
+test.set('banana', 'yellow')
+test.set('carrot', 'orange')
+test.set('dog', 'brown')
+test.set('elephant', 'gray')
+test.set('frog', 'green')
+test.set('grape', 'purple')
+test.set('hat', 'black')
+test.set('ice cream', 'white')
+test.set('jacket', 'blue')
+test.set('kite', 'pink')
+test.set('lion', 'golden')
 
-console.log(list.toString());
+console.log(test);
+
+test.set('moon', 'silver');
+
+console.log(test);
+
+console.log(test.get('apple'));
+console.log(test.has('apple'));
+console.log(test.remove('apple'));
+console.log(test.has('apple'));
+console.log(test.length());
+console.log(test.keys());
+console.log(test.values());
